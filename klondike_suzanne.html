@@ -176,6 +176,13 @@
         <button data-d="3">3 Karten</button>
       </div>
     </div>
+    <div class="opt">
+      <label>Kartendesign</label>
+      <div class="seg" id="styleSeg">
+        <button data-s="trad">Traditionell</button>
+        <button data-s="clear">Klar lesbar</button>
+      </div>
+    </div>
     <button class="start" id="startBtn">Spiel starten</button>
   </div>
 </div>
@@ -189,6 +196,48 @@ const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RVAL={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,J:11,Q:12,K:13};
 
 let state=null; // {stock,waste,found[4],tab[7]} each array of card objs
+
+
+let cardStyle="trad"; // "trad" | "clear"
+
+/* Clear, high-legibility card face generator.
+   Produces an SVG string for a 250x350 card (viewBox 0 0 250 350). */
+/* Clear deck matching the reference photo (IMG_4272):
+   - corner index: rank on top, small suit directly beneath (compact, bold)
+   - classic pip layout, bottom half rotated (as real cards)
+   - Ace: single large centered suit
+   - J/Q/K are NOT drawn here — cardEl pulls the real figure from the embedded deck.
+   viewBox 0 0 250 350 */
+/* Clear deck — matches reference IMG_4272 exactly:
+   - single corner index at TOP-LEFT only: rank + suit side by side
+   - NO second (rotated) corner
+   - large bold pips
+   - Ace: one large centered suit
+   J/Q/K use the real figures (handled in cardEl).
+   viewBox 0 0 250 350 */
+/* Minimal deck per user's spec:
+   - top-left: rank
+   - top-right: suit symbol
+   - bottom center: ONE large suit symbol (number cards) OR figure (J/Q/K, handled in cardEl)
+   viewBox 0 0 250 350 */
+function clearCardSVG(rank, suit){
+  const red = (suit==='♥'||suit==='♦');
+  const col = red ? '#c8102e' : '#0a1622';
+  const S = suit;
+  const rankSize = (rank==='10') ? 52 : 60;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 350">
+    <rect x="3" y="3" width="244" height="344" rx="20" fill="#fdfdfb" stroke="#cfc9ba" stroke-width="2"/>
+    <text x="26" y="66" text-anchor="start" font-family="Arial, Helvetica, sans-serif"
+          font-weight="800" font-size="${rankSize}" fill="${col}">${rank}</text>
+    <text x="224" y="64" text-anchor="end" font-family="Arial, Helvetica, sans-serif"
+          font-weight="700" font-size="52" fill="${col}">${S}</text>
+    <text x="125" y="230" text-anchor="middle" dominant-baseline="central"
+          font-family="Arial,Helvetica,sans-serif" font-weight="700"
+          font-size="150" fill="${col}">${S}</text>
+  </svg>`;
+}
+
 let drawMode=3, moves=0, score=0, seconds=0, timerId=null, started=false;
 
 function newDeck(){
@@ -305,6 +354,16 @@ function cardEl(cd,back){
   el.style.width=CW+'px';el.style.height=CH+'px';
   el.dataset.id=cd.id;
   if(back){el.innerHTML='<div class="back"><svg viewBox="'+CARDVB['back'].join(' ')+'" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#back" href="#back"/></svg></div>';return el;}
+  if(cardStyle==='clear'){
+    if(cd.r==='J'||cd.r==='Q'||cd.r==='K'){
+      const cid=cardSvgId(cd);
+      const vb=CARDVB[cid];
+      el.innerHTML='<div class="face"><svg viewBox="'+vb.join(' ')+'" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#'+cid+'" href="#'+cid+'"/></svg></div>';
+    }else{
+      el.innerHTML='<div class="face">'+clearCardSVG(cd.r,cd.s)+'</div>';
+    }
+    return el;
+  }
   const cid=cardSvgId(cd);
   const vb=CARDVB[cid];
   el.innerHTML='<div class="face"><svg viewBox="'+vb.join(' ')+'" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#'+cid+'" href="#'+cid+'"/></svg></div>';
@@ -552,11 +611,18 @@ function openMenu(){
   document.getElementById('menu').classList.add('show');
   document.querySelectorAll('#drawSeg button').forEach(b=>
     b.classList.toggle('on',+b.dataset.d===drawMode));
+  document.querySelectorAll('#styleSeg button').forEach(b=>
+    b.classList.toggle('on',b.dataset.s===cardStyle));
 }
 document.getElementById('drawSeg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   drawMode=+b.dataset.d;
   document.querySelectorAll('#drawSeg button').forEach(x=>x.classList.toggle('on',x===b));
+});
+document.getElementById('styleSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  cardStyle=b.dataset.s;
+  document.querySelectorAll('#styleSeg button').forEach(x=>x.classList.toggle('on',x===b));
 });
 document.getElementById('startBtn').onclick=()=>{
   document.getElementById('menu').classList.remove('show');
@@ -573,6 +639,7 @@ window.addEventListener('orientationchange',()=>setTimeout(()=>{if(state)render(
 
 /* ---------- Boot ---------- */
 document.querySelector('#drawSeg button[data-d="3"]').classList.add('on');
+document.querySelector('#styleSeg button[data-s="trad"]').classList.add('on');
 openMenu();
 </script>
 </body>
