@@ -234,9 +234,31 @@ function clearCardSVG(rank, suit){
           font-weight="700" font-size="104" fill="${col}">${S}</text>
     <text x="125" y="252" text-anchor="middle" dominant-baseline="central"
           font-family="Arial,Helvetica,sans-serif" font-weight="700"
-          font-size="300" fill="${col}">${S}</text>
+          font-size="240" fill="${col}">${S}</text>
   </svg>`;
 }
+
+function clearCourtSVG(rank, suit, cid){
+  const red = (suit==='♥'||suit==='♦');
+  const col = red ? '#c8102e' : '#0a1622';
+  const vb = CARDVB[cid];
+  const x=vb[0], y=vb[1], w=vb[2], h=vb[3];
+  const rankSize = (rank==='10') ? 104 : 120;
+  const cropX = x + w*0.22;
+  const cropW = w*0.56;
+  const cropY = y + h*0.07;
+  const cropH = h*0.44;
+  const boxX=42, boxW=166, boxY=130, boxH=350-boxY-14;
+  return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 250 350">'
+    + '<rect x="3" y="3" width="244" height="344" rx="20" fill="#fdfdfb" stroke="#cfc9ba" stroke-width="2"/>'
+    + '<svg x="'+boxX+'" y="'+boxY+'" width="'+boxW+'" height="'+boxH+'" viewBox="'+cropX+' '+cropY+' '+cropW+' '+cropH+'" preserveAspectRatio="xMidYMin slice"><use xlink:href="#'+cid+'" href="#'+cid+'"/></svg>'
+    + '<rect x="'+boxX+'" y="'+boxY+'" width="24" height="'+boxH+'" fill="#fdfdfb"/>'
+    + '<rect x="'+(boxX+boxW-24)+'" y="'+boxY+'" width="24" height="'+boxH+'" fill="#fdfdfb"/>'
+    + '<text x="22" y="108" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="'+rankSize+'" fill="'+col+'">'+rank+'</text>'
+    + '<text x="238" y="104" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="104" fill="'+col+'">'+suit+'</text>'
+    + '</svg>';
+}
+
 
 let drawMode=3, moves=0, score=0, seconds=0, timerId=null, started=false;
 
@@ -356,9 +378,7 @@ function cardEl(cd,back){
   if(back){el.innerHTML='<div class="back"><svg viewBox="'+CARDVB['back'].join(' ')+'" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#back" href="#back"/></svg></div>';return el;}
   if(cardStyle==='clear'){
     if(cd.r==='J'||cd.r==='Q'||cd.r==='K'){
-      const cid=cardSvgId(cd);
-      const vb=CARDVB[cid];
-      el.innerHTML='<div class="face"><svg viewBox="'+vb.join(' ')+'" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#'+cid+'" href="#'+cid+'"/></svg></div>';
+      el.innerHTML='<div class="face">'+clearCourtSVG(cd.r,cd.s,cardSvgId(cd))+'</div>';
     }else{
       el.innerHTML='<div class="face">'+clearCardSVG(cd.r,cd.s)+'</div>';
     }
